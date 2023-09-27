@@ -5,12 +5,23 @@ from tensorflow.keras.layers import Dense, Embedding, LSTM
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 
 # Définir le vocabulaire et les classes
-vocabulary = ['bonjour', 'comment','appelles', 'quelle', 'tu', 'allez', 'vous', 'je', 'vais', 'bien', 'merci', 'et', 'vous']
-classes = ['Je vais bien, merci. Et vous ?', "Je m'appelle Bard.", "La capitale de la France est Paris.", "Aujourd'hui est le 27 septembre 2023."]
+vocabulary = [
+    'bonjour', 'comment', 'allez', 'quelle', 'est', 'météo', 'la', 'vous', 'je', 'vais', 'bien', 'merci', 'et', 'toi', 'salut', 'appelles', 'que', 
+    'tu', 'tu', 'il', 'temps', 'quel', 'que', 'demain', 'fera', 'fais', 't', 'rien', 'de', 'spécial', 'm', 'appelle', 'friday', 
+]
 
+classes = [
+    'Je vais bien, merci. Et toi ?', 'Je vais bien, merci. Et toi ?', 'Salut, tu vas bien ?', 'Je m\'appelle Friday.',
+    'Rien de spécial, et toi ?', "Je ne peux pas te fournir la météo pour le moment, désolé.", "Je ne peux pas déterminer la météo de demain actuellement."
+]
 training_data = [
-    ("Bonjour comment allez-vous ?", "Je vais bien, merci. Et vous ?"),
+    ("Bonjour comment allez-vous ?", "Je vais bien, merci. Et toi ?"),
+    ("Salut comment tu vas ?", "Je vais bien, merci. Et toi ?"),
+    ("Salut", "Salut, tu vas bien ?"),
     ("Comment appelles-tu ?", "Je m'appelle Friday."),
+    ("Que fais-tu ?", "Rien de spécial, et toi ?"),
+    ("Quelle est la météo ?", "Je ne peux pas te fournir la météo pour le moment, désolé."),
+    ("Quel temps fait-il ?", "Je ne peux pas te fournir la météo pour le moment, désolé."),
 ]
 
 def preprocess_text(text):
@@ -27,7 +38,10 @@ training_data_target = []
 for message, response in training_data:
     message = preprocess_text(message)
     message_tokens = message.strip().split()
-    input_vector = [vocabulary.index(token) for token in message_tokens]
+    input_vector = [vocabulary.index(token) if token in vocabulary else -1 for token in message_tokens]
+    
+    # Ignorer les mots qui ne sont pas dans le vocabulaire
+    input_vector = [idx for idx in input_vector if idx != -1]
     training_data_input.append(input_vector)
     training_data_target.append(classes.index(response))
 
@@ -45,14 +59,19 @@ model.add(Dense(len(classes), activation='softmax'))
 
 model.compile(loss='sparse_categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
 
-model.fit(training_data_input, training_data_target, epochs=20)
+model.load_weights('model_weights.h5')
 
-message = "Bonjour comment allez-vous ?"
+#model.fit(training_data_input, training_data_target, epochs=500)
+#model.save_weights('model_weights.h5')
+message = "Salut"
 
 message = preprocess_text(message)
 
 message_tokens = message.strip().split()
-encoded_message = [vocabulary.index(token) for token in message_tokens]
+encoded_message = [vocabulary.index(token) if token in vocabulary else -1 for token in message_tokens]
+
+# Ignorer les mots qui ne sont pas dans le vocabulaire
+encoded_message = [idx for idx in encoded_message if idx != -1]
 
 encoded_message = pad_sequences([encoded_message], maxlen=max_sequence_length, padding='post')
 
