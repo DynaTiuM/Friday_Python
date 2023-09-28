@@ -19,7 +19,7 @@ vocabulary = [
 
 classes = [
     'Je', 'Je vais bien, merci. Et toi ?', 'Salut, tu vas bien ?', 'Je m\'appelle Friday.',
-    'Rien de spécial, et toi ?', "Je ne peux pas te fournir la météo pour le moment, désolé.", "Je ne peux pas déterminer la météo de demain actuellement."
+    'Rien de spécial, et toi ?', "Très bien, j'ajoute à ta liste de courses.", "Je ne peux pas te fournir la météo pour le moment, désolé.", "Je ne peux pas déterminer la météo de demain actuellement."
 ]
 training_data = [
     ("comment tu vas ?", "Je vais bien, merci. Et toi ?"),
