@@ -1,25 +1,32 @@
 import tensorflow as tf
 import numpy as np
+import discord
+from dotenv import load_dotenv
+import os
+
+from discord.ext import commands
 from tensorflow.keras import Sequential
 from tensorflow.keras.layers import Dense, Embedding, LSTM
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 
-# Définir le vocabulaire et les classes
+load_dotenv()
+DISCORD_TOKEN = os.getenv('DISCORD_TOKEN')
+
 vocabulary = [
-    'bonjour', 'comment', 'allez', 'quelle', 'est', 'météo', 'la', 'vous', 'je', 'vais', 'bien', 'merci', 'et', 'toi', 'salut', 'appelles', 'que', 
+    'bonjour', 'comment', 'ajoute', 'liste', 'courses', 'à', 'ma' 'allez', 'quelle', 'est', 'météo', 'la', 'vous', 'je', 'vais', 'bien', 'merci', 'et', 'toi', 'salut', 'appelles', 'que', 
     'tu', 'tu', 'il', 'temps', 'quel', 'que', 'demain', 'fera', 'fais', 't', 'rien', 'de', 'spécial', 'm', 'appelle', 'friday', 
 ]
 
 classes = [
-    'Je vais bien, merci. Et toi ?', 'Je vais bien, merci. Et toi ?', 'Salut, tu vas bien ?', 'Je m\'appelle Friday.',
+    'Je', 'Je vais bien, merci. Et toi ?', 'Salut, tu vas bien ?', 'Je m\'appelle Friday.',
     'Rien de spécial, et toi ?', "Je ne peux pas te fournir la météo pour le moment, désolé.", "Je ne peux pas déterminer la météo de demain actuellement."
 ]
 training_data = [
-    ("Bonjour comment allez-vous ?", "Je vais bien, merci. Et toi ?"),
-    ("Salut comment tu vas ?", "Je vais bien, merci. Et toi ?"),
+    ("comment tu vas ?", "Je vais bien, merci. Et toi ?"),
     ("Salut", "Salut, tu vas bien ?"),
     ("Comment appelles-tu ?", "Je m'appelle Friday."),
     ("Que fais-tu ?", "Rien de spécial, et toi ?"),
+    ("Ajoute à ma liste de courses", "Très bien, j'ajoute à ta liste de courses."),
     ("Quelle est la météo ?", "Je ne peux pas te fournir la météo pour le moment, désolé."),
     ("Quel temps fait-il ?", "Je ne peux pas te fournir la météo pour le moment, désolé."),
 ]
@@ -59,29 +66,41 @@ model.add(Dense(len(classes), activation='softmax'))
 
 model.compile(loss='sparse_categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
 
-model.load_weights('model_weights.h5')
+#model.load_weights('model_weights.h5')
 
-#model.fit(training_data_input, training_data_target, epochs=500)
-#model.save_weights('model_weights.h5')
-message = "Salut"
+model.fit(training_data_input, training_data_target, epochs=2000)
+model.save_weights('model_weights.h5')
 
-message = preprocess_text(message)
+intents = discord.Intents.all()
 
-message_tokens = message.strip().split()
-encoded_message = [vocabulary.index(token) if token in vocabulary else -1 for token in message_tokens]
+bot = commands.Bot(command_prefix='!', intents= intents)
 
-# Ignorer les mots qui ne sont pas dans le vocabulaire
-encoded_message = [idx for idx in encoded_message if idx != -1]
+@bot.event
+async def on_ready():
+    print(f'Logged in as {bot.user.name}')
 
-encoded_message = pad_sequences([encoded_message], maxlen=max_sequence_length, padding='post')
+@bot.event
+async def on_message(message):
+    if message.author == bot.user:
+        return
 
-prediction = model.predict(encoded_message)
+    content = message.content.lower()
+    content = content.replace("-", " ")
+    content = content.replace("'", " ")
+    content = content.replace(",", " ")
+    content = content.replace("?", "")
 
-predicted_index = np.argmax(prediction)
+    encoded_message = [vocabulary.index(token) if token in vocabulary else -1 for token in content.split()]
+    encoded_message = [idx for idx in encoded_message if idx != -1]
+    encoded_message = pad_sequences([encoded_message], maxlen=max_sequence_length, padding='post')
+    prediction = model.predict(encoded_message)
+    predicted_index = np.argmax(prediction)
 
-if 0 <= predicted_index < len(classes):
-    predicted_class = classes[predicted_index]
-else:
-    predicted_class = "Je n'ai pas compris"
+    if 0 <= predicted_index < len(classes):
+        predicted_class = classes[predicted_index]
+    else:
+        predicted_class = "Je n'ai pas compris"
 
-print(predicted_class)
+    await message.channel.send(predicted_class)
+
+bot.run(DISCORD_TOKEN)
