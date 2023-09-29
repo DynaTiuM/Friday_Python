@@ -40,4 +40,4 @@ class Weather:
         temp = data['main']['temp']
         temp_max = data['main']['temp_max']
         temp_min = data['main']['temp_min']
-        return f'La météo actuelle à {city} est de {temp}°C. Les températures maximales aujourd\'hui seront de {temp_max}°C et les minimales de {temp_min}°C.'
+        return f'La météo actuelle à {city} est de **{temp}°C**. Les températures maximales aujourd\'hui seront de **{temp_max}°C** et les minimales de **{temp_min}°C**.'

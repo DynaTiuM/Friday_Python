@@ -3,12 +3,11 @@ import numpy as np
 import discord
 from weather import Weather
 from dotenv import load_dotenv
-from tensorflow.keras.layers import Dropout
 import os
 
 from discord.ext import commands
 from tensorflow.keras import Sequential
-from tensorflow.keras.layers import Dense, Embedding, LSTM
+from tensorflow.keras.layers import Dense, Embedding, LSTM, Dropout
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 
 load_dotenv()
@@ -30,13 +29,14 @@ training_data = [
     ("Quel est ton nom ?", "Je m'appelle Friday."), 
     ("Que fais-tu ?", "Rien de spécial, et toi ?"),
     ("Tu fais quoi ?", "Rien de spécial, et toi ?"),
-    ("Ajoute à ma liste de courses.", "Très bien, j'ajoute à ta liste de courses."),
-    ("Ajoute à ma liste de courses", "Très bien, j'ajoute à ta liste de courses."),
-    ("Mets à ma liste de courses.", "Très bien, j'ajoute à ta liste de courses."),
-    ("Rajoute à ma liste de courses.", "Très bien, j'ajoute à ta liste de courses."),
+    ("Ajoute à ma liste de courses.", "liste-courses"),
+    ("Ajoute à ma liste de courses", "liste-courses"),
+    ("Mets à ma liste de courses.", "liste-courses"),
+    ("Rajoute à ma liste de courses.", "liste-courses"),
     ("Quelle est la météo ?", "meteo"),
     ("Quel temps fait-il ?", "meteo"),
     ("Météo à ?", "meteo"),
+    ("Météo à ville", "meteo"),
     ("Météo aujourd'hui à", "meteo"),
     ("Météo", "meteo"),
     ("Quel temps fait-il aujourd'hui ?", "meteo"),
@@ -68,6 +68,7 @@ training_data = [
     ("Que penses-tu de l'amour ?", "L'amour est un sentiment complexe et profond."), 
     ("T'en penses quoi de l'amour ?", "L'amour est un sentiment complexe et profond."), 
     ("Qui es-tu ?", "Je suis Friday, une intelligence artificielle spécialement entrainée pour répondre à tes questions."), 
+    ("Tu es qui ?", "Je suis Friday, une intelligence artificielle spécialement entrainée pour répondre à tes questions."), 
 ]
 for question, _ in training_data:
     words = question.lower().split()
@@ -86,6 +87,7 @@ def preprocess_text(text):
     text = text.replace("-", " ")
     text = text.replace("'", " ")
     text = text.replace(",", " ")
+    text = text.replace("?", "") 
     return text
 
 training_data_input = []
@@ -109,18 +111,18 @@ training_data_target = np.array(training_data_target)
 model = Sequential()
 
 # Ajoutez une couche d'embedding
-model.add(Embedding(input_dim=len(vocabulary), output_dim=64))
+model.add(Embedding(input_dim=len(vocabulary), output_dim=128))
 
 # Ajoutez une couche LSTM avec dropout
 model.add(LSTM(128, return_sequences=True))
 model.add(Dropout(0.5))  # Dropout pour régularisation
 
 # Ajoutez une deuxième couche LSTM avec dropout
-model.add(LSTM(256))
+model.add(LSTM(128))
 model.add(Dropout(0.5))  # Dropout pour régularisation
 
 # Ajoutez une couche Dense
-model.add(Dense(64, activation='relu'))
+model.add(Dense(128, activation='relu'))
 model.add(Dropout(0.5))  # Dropout pour régularisation
 
 # Couche de sortie
@@ -128,14 +130,13 @@ model.add(Dense(len(classes), activation='softmax'))
 
 
 model.compile(loss='sparse_categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
-model.summary()
-
 
 #model.load_weights('model_weights.h5')
 
-model.fit(training_data_input, training_data_target, epochs=2000)
+model.fit(training_data_input, training_data_target, epochs=4000)
 model.save_weights('model_weights.h5')
- 
+
+model.summary()
 intents = discord.Intents.all()
 
 bot = commands.Bot(command_prefix='!', intents= intents)
