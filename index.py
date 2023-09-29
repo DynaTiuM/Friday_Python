@@ -2,6 +2,7 @@ import tensorflow as tf
 import numpy as np
 import discord
 from weather import Weather
+from groceries import Groceries
 from dotenv import load_dotenv
 import os
 
@@ -41,9 +42,9 @@ training_data = [
     ("Météo", "meteo"),
     ("Quel temps fait-il aujourd'hui ?", "meteo"),
     ("Je suis triste", "Je suis désolé de l'apprendre, j'espère que ce n'est pas trop grave."),
-    ("J'ai tué quelqu'un", "Tu viens de dire de dire que tu as tué quelqu'un ? Je vais alerter la police."),
-    ("J'ai assassiné quelqu'un", "Tu viens de dire de dire que tu as tué quelqu'un ? Je vais alerter la police."),
-    ("J'ai coupé la main à quelqu'un", "Tu viens de dire de dire que tu as tué quelqu'un ? Je vais alerter la police."),
+    ("J'ai tué quelqu'un", "Tu viens de me dire que tu as tué quelqu'un ? Je vais alerter la police."),
+    ("J'ai assassiné quelqu'un", "Tu viens de me dire que tu as tué quelqu'un ? Je vais alerter la police."),
+    ("J'ai coupé la main à quelqu'un", "Tu viens de me dire que tu as tué quelqu'un ? Je vais alerter la police."),
     ("J'ai tué ma tante", "Tu viens de dire de dire que tu as tué quelqu'un ? Je vais alerter la police."),
     ("Tu fais quoi aujourd'hui ?", "Rien de spécial, et toi ?"),
     ("Quel est ton plat préféré ?", "Je n'ai pas de préférence, je suis une intelligence artificielle."), 
@@ -125,10 +126,10 @@ model.add(Dense(len(classes), activation='softmax'))
 
 model.compile(loss='sparse_categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
 
-#model.load_weights('model_weights.h5')
+model.load_weights('model_weights.h5')
 
-model.fit(training_data_input, training_data_target, epochs=4000)
-model.save_weights('model_weights.h5')
+#model.fit(training_data_input, training_data_target, epochs=4000)
+#model.save_weights('model_weights.h5')
 
 model.summary()
 intents = discord.Intents.all()
@@ -167,7 +168,9 @@ async def on_message(message):
 
     if predicted_class == "meteo":
         weather = Weather()
-        await message.channel.send(weather.getWeather(content))
+        await message.channel.send(weather.get_weather(content))
+    elif predicted_class == "liste-courses":
+        Groceries()
     else :
         await message.channel.send(predicted_class)
 
