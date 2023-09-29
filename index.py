@@ -1,6 +1,7 @@
 import tensorflow as tf
 import numpy as np
 import discord
+from weather import Weather
 from dotenv import load_dotenv
 import os
 
@@ -19,7 +20,7 @@ vocabulary = [
 
 classes = [
     'Je', 'Je vais bien, merci. Et toi ?', 'Salut, tu vas bien ?', 'Je m\'appelle Friday.',
-    'Rien de spécial, et toi ?', "Très bien, j'ajoute à ta liste de courses.", "Je ne peux pas te fournir la météo pour le moment, désolé.", "Je ne peux pas déterminer la météo de demain actuellement."
+    'Rien de spécial, et toi ?', "Très bien, j'ajoute à ta liste de courses.", "meteo"
 ]
 training_data = [
     ("comment tu vas ?", "Je vais bien, merci. Et toi ?"),
@@ -27,8 +28,8 @@ training_data = [
     ("Comment appelles-tu ?", "Je m'appelle Friday."),
     ("Que fais-tu ?", "Rien de spécial, et toi ?"),
     ("Ajoute à ma liste de courses", "Très bien, j'ajoute à ta liste de courses."),
-    ("Quelle est la météo ?", "Je ne peux pas te fournir la météo pour le moment, désolé."),
-    ("Quel temps fait-il ?", "Je ne peux pas te fournir la météo pour le moment, désolé."),
+    ("Quelle est la météo ?", "meteo"),
+    ("Quel temps fait-il ?", "meteo"),
 ]
 
 def preprocess_text(text):
@@ -66,10 +67,10 @@ model.add(Dense(len(classes), activation='softmax'))
 
 model.compile(loss='sparse_categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
 
-#model.load_weights('model_weights.h5')
+model.load_weights('model_weights.h5')
 
-model.fit(training_data_input, training_data_target, epochs=2000)
-model.save_weights('model_weights.h5')
+#model.fit(training_data_input, training_data_target, epochs=1000)
+#model.save_weights('model_weights.h5')
 
 intents = discord.Intents.all()
 
@@ -99,8 +100,12 @@ async def on_message(message):
     if 0 <= predicted_index < len(classes):
         predicted_class = classes[predicted_index]
     else:
-        predicted_class = "Je n'ai pas compris"
+        predicted_class = "Désolé, je n'ai pas compris."
 
-    await message.channel.send(predicted_class)
+    if predicted_class == "meteo":
+        weather = Weather()
+        await message.channel.send(weather.getWeather(content))
+    else :
+        await message.channel.send(predicted_class)
 
 bot.run(DISCORD_TOKEN)
