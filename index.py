@@ -98,7 +98,6 @@ for message, response in training_data:
     message_tokens = message.strip().split()
     input_vector = [vocabulary.index(token) if token in vocabulary else -1 for token in message_tokens]
     
-    # Ignorer les mots qui ne sont pas dans le vocabulaire
     input_vector = [idx for idx in input_vector if idx != -1]
     training_data_input.append(input_vector)
     training_data_target.append(classes.index(response))
@@ -110,22 +109,17 @@ training_data_target = np.array(training_data_target)
 
 model = Sequential()
 
-# Ajoutez une couche d'embedding
 model.add(Embedding(input_dim=len(vocabulary), output_dim=128))
 
-# Ajoutez une couche LSTM avec dropout
 model.add(LSTM(128, return_sequences=True))
 model.add(Dropout(0.5))  # Dropout pour régularisation
 
-# Ajoutez une deuxième couche LSTM avec dropout
 model.add(LSTM(128))
-model.add(Dropout(0.5))  # Dropout pour régularisation
+model.add(Dropout(0.5))
 
-# Ajoutez une couche Dense
 model.add(Dense(128, activation='relu'))
-model.add(Dropout(0.5))  # Dropout pour régularisation
+model.add(Dropout(0.5))
 
-# Couche de sortie
 model.add(Dense(len(classes), activation='softmax'))
 
 
