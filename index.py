@@ -110,7 +110,7 @@ training_data_target = np.array(training_data_target)
 
 model = Sequential()
 
-model.add(Embedding(input_dim=len(vocabulary), output_dim=128))
+model.add(Embedding(input_dim=len(vocabulary), output_dim=64))
 
 model.add(LSTM(128, return_sequences=True))
 model.add(Dropout(0.5))  # Dropout pour régularisation
@@ -118,7 +118,7 @@ model.add(Dropout(0.5))  # Dropout pour régularisation
 model.add(LSTM(128))
 model.add(Dropout(0.5))
 
-model.add(Dense(128, activation='relu'))
+model.add(Dense(64, activation='relu'))
 model.add(Dropout(0.5))
 
 model.add(Dense(len(classes), activation='softmax'))
@@ -126,10 +126,10 @@ model.add(Dense(len(classes), activation='softmax'))
 
 model.compile(loss='sparse_categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
 
-model.load_weights('model_weights.h5')
+#model.load_weights('model_weights.h5')
 
-#model.fit(training_data_input, training_data_target, epochs=4000)
-#model.save_weights('model_weights.h5')
+model.fit(training_data_input, training_data_target, epochs=5000)
+model.save_weights('model_weights.h5')
 
 model.summary()
 intents = discord.Intents.all()
@@ -170,7 +170,8 @@ async def on_message(message):
         weather = Weather()
         await message.channel.send(weather.get_weather(content))
     elif predicted_class == "liste-courses":
-        Groceries()
+        groceries = Groceries()
+        await message.channel.send(groceries.add_grocery(message.content, message.author.id))
     else :
         await message.channel.send(predicted_class)
 

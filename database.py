@@ -17,10 +17,23 @@ class Database:
         self.conn.close()
 
     def create_tables_if_not_exist(self):
+        self._create_user_table()
+        
+    def _create_user_table(self):
         self.cursor.execute('''
             CREATE TABLE IF NOT EXISTS users (
                 id INTEGER PRIMARY KEY,
                 name TEXT
+            )
+        ''')
+    
+    def _create_groceries_table(self):
+        self.cursor.execute('''
+            CREATE TABLE IF NOT EXISTS groceries (
+                id INTEGER PRIMARY KEY,
+                user_id INTEGER,
+                name TEXT,
+                FOREIGN KEY (user_id) REFERENCES users(id)
             )
         ''')
 
@@ -29,6 +42,7 @@ class Database:
         insert_sql = f"INSERT INTO {table_name} VALUES ({placeholders})"
         self.cursor.execute(insert_sql, data)
         self.conn.commit()
+    
 
     def display_users(self, table_name):
         self.cursor.execute(f"SELECT * FROM {table_name}")
