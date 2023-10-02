@@ -14,7 +14,7 @@ class Groceries:
                 return index_of_determinant
         return -1
     
-    def find_grocery(self, message: str, author: str) -> str:
+    def find_grocery(self, message: str, author: int) -> str:
         words = message.split()
         index = self.find_determinant_index(words)
         if index == -1:
@@ -24,17 +24,20 @@ class Groceries:
         else:
             return "Désolé, je n'ai pas compris, que voulez-vous ajouter à votre liste de courses ?"
     
-    def add_grocery_to_database(self, grocery: str, author: str) -> str:
+    def add_grocery_to_database(self, grocery: str, author: int) -> str:
         if not self.exists(author):
-            self._database.insert_data('users', author)    
-        
-        self._database.insert_data('groceries', [grocery, author])
-        self._database.close()
-        return f"Très bien, j'ai bien ajouté **{grocery} à ta liste de courses."
+            insert_sql = "INSERT INTO users (name) VALUES (?)"
+            self._database.cursor.execute(insert_sql, (author,))
 
-    def exists(self, user_id: str) -> bool:
-        self._database.execute("SELECT id FROM users WHERE id = ?", (user_id))
-        result = self._database.fetchone()
+            self._database.conn.commit()   
+        
+        self._database.insert_data('groceries', ["name", "user_id"], [grocery, author])
+        self._database.close()
+        return f"Très bien, j'ai bien ajouté **{grocery}** à ta liste de courses."
+
+    def exists(self, user_name: int) -> bool:
+        self._database.cursor.execute("SELECT id FROM users WHERE id = ?", (user_name,))
+        result = self._database.cursor.fetchone()
         
         if result:
             return True
