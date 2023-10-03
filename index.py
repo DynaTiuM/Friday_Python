@@ -34,6 +34,13 @@ training_data = [
     ("Ajoute à ma liste de courses", "liste-courses"),
     ("Mets à ma liste de courses.", "liste-courses"),
     ("Rajoute à ma liste de courses.", "liste-courses"),
+    ("Donne moi ma liste de courses.", "get-liste-courses"),
+    ("Quelle est ma liste de courses.", "get-liste-courses"),
+    ("Envoie ma liste de courses.", "get-liste-courses"),
+    ("Peux-tu me dire ma liste de courses.", "get-liste-courses"),
+    ("Rappelle moi ma liste de courses.", "get-liste-courses"),
+    ("Qu'ai-je dans ma liste de courses ?", "get-liste-courses"),
+    ("Qu'est ce qu'il y a dans ma liste de courses ?", "get-liste-courses"),
     ("Quelle est la météo ?", "meteo"),
     ("Quel temps fait-il ?", "meteo"),
     ("Météo à ?", "meteo"),
@@ -123,7 +130,6 @@ model.add(Dropout(0.5))
 
 model.add(Dense(len(classes), activation='softmax'))
 
-
 model.compile(loss='sparse_categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
 
 #model.load_weights('model_weights.h5')
@@ -172,6 +178,10 @@ async def on_message(message):
     elif predicted_class == "liste-courses":
         groceries = Groceries()
         await message.channel.send(groceries.add_grocery(message.content, message.author.id))
+    elif predicted_class == "get-liste-courses":
+        groceries = Groceries()
+        await message.channel.send(groceries.get_groceries(message.author.id))
+
     else :
         await message.channel.send(predicted_class)
 

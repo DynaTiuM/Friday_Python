@@ -30,7 +30,7 @@ class Groceries:
         
         self._database.insert_data('groceries', [grocery, author])
         self._database.close()
-        return f"Très bien, j'ai bien ajouté **{grocery} à ta liste de courses."
+        return f"Très bien, j'ai bien ajouté **{grocery}** à ta liste de courses."
 
     def exists(self, user_id: str) -> bool:
         self._database.execute("SELECT id FROM users WHERE id = ?", (user_id))
@@ -42,3 +42,22 @@ class Groceries:
 
     def add_grocery(self, message, author) -> str:
         return self.find_grocery(message, author)
+    
+    def get_groceries(self, author) -> str:
+        groceries = self.find_groceries(author)
+        groceries_str = 'Voici ta liste de courses : \n'
+        if groceries != "none":
+            for grocery in groceries:
+                groceries_str += '\n->' + grocery[0]
+                    
+            return groceries_str
+        else:
+            return "Ta liste de courses est vide."
+    
+    def find_groceries(self, author) -> list[str]:
+        self._database.cursor.execute("SELECT name FROM groceries where user_id  = ?", (author,))
+        result = self._database.cursor.fetchall()
+
+        if result:
+            return result
+        return "none"
