@@ -26,15 +26,11 @@ class Groceries:
     
     def add_grocery_to_database(self, grocery: str, author: int) -> str:
         if not self.exists(author):
-
-            self._database.insert_data('users', author)    
-        
-            self._database.insert_data('groceries', [grocery, author])
-            self._database.close()
-            return f"Très bien, j'ai bien ajouté **{grocery}** à ta liste de courses."
+            self._database.cursor.execute("INSERT INTO users VALUES (?)", (author,))  
+            self._database.conn.commit()
         
         self._database.insert_data('groceries', ["name", "user_id"], [grocery, author])
-        self._database.close()
+    
         return f"Très bien, j'ai bien ajouté **{grocery}** à ta liste de courses."
 
     def exists(self, user_name: int) -> bool:
@@ -53,7 +49,7 @@ class Groceries:
         groceries_str = 'Voici ta liste de courses : \n'
         if groceries != "none":
             for grocery in groceries:
-                groceries_str += '\n->' + grocery[0]
+                groceries_str += '\n-> ' + grocery[0]
                     
             return groceries_str
         else:

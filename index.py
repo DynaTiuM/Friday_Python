@@ -133,7 +133,7 @@ model.compile(loss='sparse_categorical_crossentropy', optimizer='adam', metrics=
 
 #model.load_weights('model_weights.h5')
 
-model.fit(training_data_input, training_data_target, epochs=3000)
+model.fit(training_data_input, training_data_target, epochs=1000)
 model.save_weights('model_weights.h5')
 
 model.summary()

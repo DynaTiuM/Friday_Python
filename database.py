@@ -23,8 +23,7 @@ class Database:
     def _create_user_table(self):
         self.cursor.execute('''
             CREATE TABLE IF NOT EXISTS users (
-                id INTEGER PRIMARY KEY,
-                name TEXT
+                id INTEGER PRIMARY KEY
             )
         ''')
     
@@ -49,11 +48,3 @@ class Database:
         self.conn.commit()
 
 
-    
-
-    def display_users(self, table_name):
-        self.cursor.execute(f"SELECT * FROM {table_name}")
-        rows = self.cursor.fetchall()
-
-        for row in rows:
-            print(f"ID: {row[0]}, Nom: {row[1]}")
