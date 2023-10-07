@@ -43,6 +43,12 @@ training_data = [
     ("Rappelle moi ma liste de courses.", "get-liste-courses"),
     ("Qu'ai-je dans ma liste de courses ?", "get-liste-courses"),
     ("Qu'est ce qu'il y a dans ma liste de courses ?", "get-liste-courses"),
+    ("Supprime objet de ma liste de courses", "remove-liste-courses"),
+    ("Enlève objet de ma liste de courses", "remove-liste-courses"),
+    ("Enlève l'objet de ma liste de courses", "remove-liste-courses"),
+    ("Enlève le objet de ma liste de courses", "remove-liste-courses"),
+    ("Retire de ma liste de courses", "remove-liste-courses"),
+    ("Supprime de ma liste de courses", "remove-liste-courses"),
     ("Quelle est la météo ?", "meteo"),
     ("Quel temps fait-il ?", "meteo"),
     ("Météo à ?", "meteo"),
@@ -79,6 +85,16 @@ training_data = [
     ("T'en penses quoi de l'amour ?", "L'amour est un sentiment complexe et profond."), 
     ("Qui es-tu ?", "Je suis Friday, une intelligence artificielle spécialement entrainée pour répondre à tes questions."), 
     ("Tu es qui ?", "Je suis Friday, une intelligence artificielle spécialement entrainée pour répondre à tes questions."), 
+    ("monnaie", "Désolé, je ne peux pas te transmettre l'argent gagné pour le moment. Attends que je fasse mon annonce quotidienne."), 
+    ("money", "Désolé, je ne peux pas te transmettre l'argent gagné pour le moment. Attends que je fasse mon annonce quotidienne."), 
+    ("argent", "Désolé, je ne peux pas te transmettre l'argent gagné pour le moment. Attends que je fasse mon annonce quotidienne."), 
+    ("salaire", "Désolé, je ne peux pas te transmettre l'argent gagné pour le moment. Attends que je fasse mon annonce quotidienne."), 
+    ("fdp", "Je ne te permets pas de m'insulter."), 
+    ("ta mère", "Je ne te permets pas de m'insulter."), 
+    ("tu es moche", "Je ne te permets pas de m'insulter."), 
+    ("T'es vexé ?", "Je suis un programme informatique, je ne peux pas être vexé."), 
+    ("Tu connais personne ?", "Je ne connais pas spécialement cette personne."), 
+    ("Comment m'endormir vite ?", "Je ne connais pas la réponse à cette question pour le moment, mais j'apprends vite !"), 
 ]
 for question, _ in training_data:
     words = question.lower().split()
@@ -119,13 +135,13 @@ training_data_target = np.array(training_data_target)
 
 model = Sequential()
 
-model.add(Embedding(input_dim=len(vocabulary), output_dim=64))
+model.add(Embedding(input_dim=len(vocabulary), output_dim=128))
 
 model.add(LSTM(128, return_sequences=True))
 
 model.add(LSTM(128))
 
-model.add(Dense(64, activation='relu'))
+model.add(Dense(128, activation='relu'))
 
 model.add(Dense(len(classes), activation='softmax'))
 
@@ -133,7 +149,7 @@ model.compile(loss='sparse_categorical_crossentropy', optimizer='adam', metrics=
 
 #model.load_weights('model_weights.h5')
 
-model.fit(training_data_input, training_data_target, epochs=1000)
+model.fit(training_data_input, training_data_target, epochs=200)
 model.save_weights('model_weights.h5')
 
 model.summary()
@@ -157,7 +173,7 @@ async def on_message(message):
     content = content.replace("'", " ")
     content = content.replace(",", " ")
     content = content.replace("?", "")
-
+    content = content[1:]
     encoded_message = [vocabulary.index(token) if token in vocabulary else -1 for token in content.split()]
     encoded_message = [idx for idx in encoded_message if idx != -1]
     encoded_message = pad_sequences([encoded_message], maxlen=max_sequence_length, padding='post')
@@ -176,11 +192,14 @@ async def on_message(message):
         await message.channel.send(weather.get_weather(content))
     elif predicted_class == "liste-courses":
         groceries = Groceries()
-        print(message.author.id)
-        await message.channel.send(groceries.add_grocery(message.content, message.author.id))
+        await message.channel.send(groceries.add_grocery(content, message.author.id))
     elif predicted_class == "get-liste-courses":
         groceries = Groceries()
         await message.channel.send(groceries.get_groceries(message.author.id))
+    elif predicted_class == "remove-liste-courses":
+        groceries = Groceries()
+        print(message.content)
+        await message.channel.send(groceries.remove_grocery(content, message.author.id))
 
     else :
         await message.channel.send(predicted_class)
