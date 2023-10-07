@@ -2,13 +2,13 @@ import tensorflow as tf
 import numpy as np
 import discord
 from weather import Weather
+from groceries import Groceries
 from dotenv import load_dotenv
-from tensorflow.keras.layers import Dropout
 import os
 
 from discord.ext import commands
 from tensorflow.keras import Sequential
-from tensorflow.keras.layers import Dense, Embedding, LSTM
+from tensorflow.keras.layers import Dense, Embedding, LSTM, Dropout
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 
 load_dotenv()
@@ -30,20 +30,36 @@ training_data = [
     ("Quel est ton nom ?", "Je m'appelle Friday."), 
     ("Que fais-tu ?", "Rien de spécial, et toi ?"),
     ("Tu fais quoi ?", "Rien de spécial, et toi ?"),
-    ("Ajoute à ma liste de courses.", "Très bien, j'ajoute à ta liste de courses."),
-    ("Ajoute à ma liste de courses", "Très bien, j'ajoute à ta liste de courses."),
-    ("Mets à ma liste de courses.", "Très bien, j'ajoute à ta liste de courses."),
-    ("Rajoute à ma liste de courses.", "Très bien, j'ajoute à ta liste de courses."),
+    ("Ajoute à ma liste de courses.", "liste-courses"),
+    ("Ajoute du poulet à ma liste de courses.", "liste-courses"),
+    ("Ajoute du objet à ma liste de courses.", "liste-courses"),
+    ("Ajoute à ma liste de courses", "liste-courses"),
+    ("Mets à ma liste de courses.", "liste-courses"),
+    ("Rajoute à ma liste de courses.", "liste-courses"),
+    ("Donne moi ma liste de courses.", "get-liste-courses"),
+    ("Quelle est ma liste de courses.", "get-liste-courses"),
+    ("Envoie ma liste de courses.", "get-liste-courses"),
+    ("Peux-tu me dire ma liste de courses.", "get-liste-courses"),
+    ("Rappelle moi ma liste de courses.", "get-liste-courses"),
+    ("Qu'ai-je dans ma liste de courses ?", "get-liste-courses"),
+    ("Qu'est ce qu'il y a dans ma liste de courses ?", "get-liste-courses"),
+    ("Supprime objet de ma liste de courses", "remove-liste-courses"),
+    ("Enlève objet de ma liste de courses", "remove-liste-courses"),
+    ("Enlève l'objet de ma liste de courses", "remove-liste-courses"),
+    ("Enlève le objet de ma liste de courses", "remove-liste-courses"),
+    ("Retire de ma liste de courses", "remove-liste-courses"),
+    ("Supprime de ma liste de courses", "remove-liste-courses"),
     ("Quelle est la météo ?", "meteo"),
     ("Quel temps fait-il ?", "meteo"),
     ("Météo à ?", "meteo"),
+    ("Météo à ville", "meteo"),
     ("Météo aujourd'hui à", "meteo"),
     ("Météo", "meteo"),
     ("Quel temps fait-il aujourd'hui ?", "meteo"),
     ("Je suis triste", "Je suis désolé de l'apprendre, j'espère que ce n'est pas trop grave."),
-    ("J'ai tué quelqu'un", "Tu viens de dire de dire que tu as tué quelqu'un ? Je vais alerter la police."),
-    ("J'ai assassiné quelqu'un", "Tu viens de dire de dire que tu as tué quelqu'un ? Je vais alerter la police."),
-    ("J'ai coupé la main à quelqu'un", "Tu viens de dire de dire que tu as tué quelqu'un ? Je vais alerter la police."),
+    ("J'ai tué quelqu'un", "Tu viens de me dire que tu as tué quelqu'un ? Je vais alerter la police."),
+    ("J'ai assassiné quelqu'un", "Tu viens de me dire que tu as tué quelqu'un ? Je vais alerter la police."),
+    ("J'ai coupé la main à quelqu'un", "Tu viens de me dire que tu as tué quelqu'un ? Je vais alerter la police."),
     ("J'ai tué ma tante", "Tu viens de dire de dire que tu as tué quelqu'un ? Je vais alerter la police."),
     ("Tu fais quoi aujourd'hui ?", "Rien de spécial, et toi ?"),
     ("Quel est ton plat préféré ?", "Je n'ai pas de préférence, je suis une intelligence artificielle."), 
@@ -68,6 +84,17 @@ training_data = [
     ("Que penses-tu de l'amour ?", "L'amour est un sentiment complexe et profond."), 
     ("T'en penses quoi de l'amour ?", "L'amour est un sentiment complexe et profond."), 
     ("Qui es-tu ?", "Je suis Friday, une intelligence artificielle spécialement entrainée pour répondre à tes questions."), 
+    ("Tu es qui ?", "Je suis Friday, une intelligence artificielle spécialement entrainée pour répondre à tes questions."), 
+    ("monnaie", "Désolé, je ne peux pas te transmettre l'argent gagné pour le moment. Attends que je fasse mon annonce quotidienne."), 
+    ("money", "Désolé, je ne peux pas te transmettre l'argent gagné pour le moment. Attends que je fasse mon annonce quotidienne."), 
+    ("argent", "Désolé, je ne peux pas te transmettre l'argent gagné pour le moment. Attends que je fasse mon annonce quotidienne."), 
+    ("salaire", "Désolé, je ne peux pas te transmettre l'argent gagné pour le moment. Attends que je fasse mon annonce quotidienne."), 
+    ("fdp", "Je ne te permets pas de m'insulter."), 
+    ("ta mère", "Je ne te permets pas de m'insulter."), 
+    ("tu es moche", "Je ne te permets pas de m'insulter."), 
+    ("T'es vexé ?", "Je suis un programme informatique, je ne peux pas être vexé."), 
+    ("Tu connais personne ?", "Je ne connais pas spécialement cette personne."), 
+    ("Comment m'endormir vite ?", "Je ne connais pas la réponse à cette question pour le moment, mais j'apprends vite !"), 
 ]
 for question, _ in training_data:
     words = question.lower().split()
@@ -86,6 +113,7 @@ def preprocess_text(text):
     text = text.replace("-", " ")
     text = text.replace("'", " ")
     text = text.replace(",", " ")
+    text = text.replace("?", "") 
     return text
 
 training_data_input = []
@@ -96,7 +124,6 @@ for message, response in training_data:
     message_tokens = message.strip().split()
     input_vector = [vocabulary.index(token) if token in vocabulary else -1 for token in message_tokens]
     
-    # Ignorer les mots qui ne sont pas dans le vocabulaire
     input_vector = [idx for idx in input_vector if idx != -1]
     training_data_input.append(input_vector)
     training_data_target.append(classes.index(response))
@@ -108,34 +135,24 @@ training_data_target = np.array(training_data_target)
 
 model = Sequential()
 
-# Ajoutez une couche d'embedding
-model.add(Embedding(input_dim=len(vocabulary), output_dim=64))
+model.add(Embedding(input_dim=len(vocabulary), output_dim=128))
 
-# Ajoutez une couche LSTM avec dropout
 model.add(LSTM(128, return_sequences=True))
-model.add(Dropout(0.5))  # Dropout pour régularisation
 
-# Ajoutez une deuxième couche LSTM avec dropout
-model.add(LSTM(256))
-model.add(Dropout(0.5))  # Dropout pour régularisation
+model.add(LSTM(128))
 
-# Ajoutez une couche Dense
-model.add(Dense(64, activation='relu'))
-model.add(Dropout(0.5))  # Dropout pour régularisation
+model.add(Dense(128, activation='relu'))
 
-# Couche de sortie
 model.add(Dense(len(classes), activation='softmax'))
 
-
 model.compile(loss='sparse_categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
-model.summary()
-
 
 #model.load_weights('model_weights.h5')
 
-model.fit(training_data_input, training_data_target, epochs=2000)
+model.fit(training_data_input, training_data_target, epochs=200)
 model.save_weights('model_weights.h5')
- 
+
+model.summary()
 intents = discord.Intents.all()
 
 bot = commands.Bot(command_prefix='!', intents= intents)
@@ -156,7 +173,7 @@ async def on_message(message):
     content = content.replace("'", " ")
     content = content.replace(",", " ")
     content = content.replace("?", "")
-
+    content = content[1:]
     encoded_message = [vocabulary.index(token) if token in vocabulary else -1 for token in content.split()]
     encoded_message = [idx for idx in encoded_message if idx != -1]
     encoded_message = pad_sequences([encoded_message], maxlen=max_sequence_length, padding='post')
@@ -172,7 +189,18 @@ async def on_message(message):
 
     if predicted_class == "meteo":
         weather = Weather()
-        await message.channel.send(weather.getWeather(content))
+        await message.channel.send(weather.get_weather(content))
+    elif predicted_class == "liste-courses":
+        groceries = Groceries()
+        await message.channel.send(groceries.add_grocery(content, message.author.id))
+    elif predicted_class == "get-liste-courses":
+        groceries = Groceries()
+        await message.channel.send(groceries.get_groceries(message.author.id))
+    elif predicted_class == "remove-liste-courses":
+        groceries = Groceries()
+        print(message.content)
+        await message.channel.send(groceries.remove_grocery(content, message.author.id))
+
     else :
         await message.channel.send(predicted_class)
 
