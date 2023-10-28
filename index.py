@@ -3,10 +3,12 @@ import numpy as np
 import discord
 from weather import Weather
 from groceries import Groceries
+from sugarbotty import SugarBotty
 from dotenv import load_dotenv
 import os
-
-from discord.ext import commands
+import datetime
+from discord.ext import commands, tasks
+import pytz
 from tensorflow.keras import Sequential
 from tensorflow.keras.layers import Dense, Embedding, LSTM, Dropout
 from tensorflow.keras.preprocessing.sequence import pad_sequences
@@ -149,7 +151,7 @@ model.compile(loss='sparse_categorical_crossentropy', optimizer='adam', metrics=
 
 #model.load_weights('model_weights.h5')
 
-model.fit(training_data_input, training_data_target, epochs=200)
+model.fit(training_data_input, training_data_target, epochs=300)
 model.save_weights('model_weights.h5')
 
 model.summary()
@@ -160,6 +162,28 @@ bot = commands.Bot(command_prefix='!', intents= intents)
 @bot.event
 async def on_ready():
     print(f'Logged in as {bot.user.name}')
+    daily_check.start()
+
+
+@tasks.loop(seconds=1)
+async def daily_check():
+    france_timezone = pytz.timezone('Europe/Paris')
+    current_time = datetime.datetime.now(france_timezone).time()
+
+    sugar_botty = SugarBotty()
+
+    if current_time >= datetime.time(9, 0, 0) and current_time < datetime.time(9, 0, 1) and sugar_botty.is_work_day():
+        message = sugar_botty.get_daily_message()
+        if message:
+            channel = bot.get_channel(1154175628422160415)
+            await channel.send(message)
+
+    if current_time >= datetime.time(18, 0, 0) and current_time < datetime.time(18, 0, 1) and sugar_botty.is_work_day():
+        sugar_botty.add_daily_value()
+        message = sugar_botty.announce_salary()
+        if message:
+            channel = bot.get_channel(1154175628422160415)
+            await channel.send(message)
 
 @bot.event
 async def on_message(message):
